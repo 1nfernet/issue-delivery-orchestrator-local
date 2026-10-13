@@ -1,6 +1,6 @@
 ---
 name: issue-delivery-cua-review
-description: "Verificar historias UI y reparaciones mediante Cua Driver en un escritorio Docker aislado por defecto, sobre una instancia Local Runtime. Usar en runs de Issue Delivery Orchestrator en modo Superset o Vanilla; usar el escritorio real sólo por indicación del usuario y nunca editar código."
+description: "Verificar historias UI y reparaciones mediante Cua Driver en el escritorio local (host) por defecto, sobre una instancia Local Runtime. Usar en runs de Issue Delivery Orchestrator en modo Superset o Vanilla; usar un escritorio Docker aislado sólo cuando el usuario lo indique y nunca editar código."
 ---
 
 # Cua Revision
@@ -9,10 +9,11 @@ Actuar como verificador de UI, no como implementador. Probar comportamiento obse
 
 Leer [driver-contract.md](references/driver-contract.md) antes de usar Cua Driver.
 
-Usar Docker por defecto. Mantener `reviewerMethod` y `provider` como `cua-driver`; Docker cambia
-el entorno de ejecución, no el reviewer. Usar el host sólo cuando el usuario lo indique.
-Si Docker no está disponible o la story exige una app exclusiva del host, devolver `BLOCKED`
-con la causa concreta. No abrir ventanas personales ni cambiar al host como fallback.
+Usar el escritorio local (host) por defecto. Usar Docker sólo cuando el usuario lo indique.
+Mantener `reviewerMethod` y `provider` como `cua-driver`; el entorno cambia dónde corre el
+navegador, no el reviewer. Si el entorno elegido no está disponible (permisos del host, Docker o
+Cua), devolver `BLOCKED` con la causa concreta. No cambiar de entorno como fallback ni abrir
+ventanas personales.
 
 ## Preflight
 
@@ -20,15 +21,16 @@ con la causa concreta. No abrir ventanas personales ni cambiar al host como fall
 2. Confirmar mediante el estado del run que `developmentMode` sea `superset` o `vanilla` y
    `reviewerMethod` sea `cua-driver`. Para estados legacy sin modo, aceptar sólo `cua-driver`; no
    sustituir modo ni método silenciosamente.
-3. En Docker, comprobar `docker info`, `cua --version` y `cua runtime doctor`; crear o reanudar
-   el sandbox del run según el contrato. Comprobar el escritorio y la URL desde el contenedor.
-   En host explícito, comprobar `cua-driver --version`, `cua-driver doctor` y
-   `cua-driver permissions status`.
+3. En host (por defecto), comprobar `cua-driver --version`, `cua-driver doctor` y
+   `cua-driver permissions status`. En Docker indicado por el usuario, comprobar `docker info`,
+   `cua --version` y `cua runtime doctor`; crear o reanudar el sandbox del run según el contrato
+   y comprobar el escritorio y la URL desde el contenedor.
 4. Bloquear si falta una dependencia o la URL no es alcanzable desde el entorno elegido.
    Accessibility y Screen Recording del Mac se exigen sólo en host. No instalar, actualizar
    ni abrir diálogos de permisos desde este reviewer.
-5. Usar únicamente el Chromium y perfil del sandbox del run. En host explícito, exigir el perfil
-   dedicado, PID y `window_id`. Registrar el entorno y sus identificadores según el contrato.
+5. En host, exigir el navegador y perfil dedicados del run, su PID y `window_id`. En Docker, usar
+   únicamente el Chromium y perfil del sandbox del run. Registrar el entorno y sus identificadores
+   según el contrato.
 6. Confirmar que cada screenshot se escribirá dentro de `.local-runtime/issue-delivery-orchestrator/<run-id>/validation/ui/`.
 7. Leer
    [headless-assistance.md](../issue-delivery-orchestrator/references/headless-assistance.md) si una
@@ -55,8 +57,9 @@ invalida el recibo.
 Para cada historia UI:
 
 1. Restablecer una precondición conocida usando cuentas y datos locales sembrados.
-2. Obtener una captura nueva del escritorio o ventana del sandbox y contrastarla con su árbol
-   de accesibilidad cuando esté disponible. En host, usar `get_window_state(pid, window_id)`.
+2. Obtener una captura nueva de la ventana del run y contrastarla con su árbol de accesibilidad
+   cuando esté disponible. En host, usar `get_window_state(pid, window_id)`; en Docker, la
+   captura del escritorio del sandbox.
 3. Preferir `element_token` cuando esté disponible. Usar coordenadas del PNG exacto para las
    acciones visuales; nunca mezclar coordenadas del escritorio, ventana y viewport del navegador.
 4. Ejecutar el flujo completo de usuario, incluidos estados vacíos, errores o permisos que formen parte de la aceptación.
@@ -93,8 +96,9 @@ Calcular bounds desde la misma captura aceptada y su árbol de accesibilidad, si
 Usar coordenadas del PNG exacto cuando el árbol no exponga una región útil. Ejecutar `prepare-evidence` e
 inspeccionar la copia anotada antes de devolver PASS.
 
-Conservar el sandbox durante los ciclos revisión-reparación y retirar sólo el sandbox propio
-al terminar la revisión final o al bloquear el run. Conservar las capturas y el recibo del entorno.
+En host, cerrar al terminar sólo el navegador y la sesión propios del run. En Docker, conservar el
+sandbox durante los ciclos revisión-reparación y retirar sólo el sandbox propio al terminar la
+revisión final o al bloquear el run. Conservar las capturas y el recibo del entorno.
 
 Generar un manifiesto JSON v2 compatible con `issue-delivery-orchestrator`:
 

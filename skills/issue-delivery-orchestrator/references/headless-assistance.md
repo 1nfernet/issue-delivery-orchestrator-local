@@ -12,8 +12,9 @@ modo, provider, worktree ni runtime.
    - `hover` con `codex-browser`: mover el puntero real al centro, confirmar mediante hit testing
      que el target está bajo esas coordenadas y leer `element.matches(':hover')` sobre el target o
      ancestro dueño del estilo.
-   - `hover` con `cua-driver`: mover el puntero del sandbox mediante accesibilidad o coordenadas
-     de la captura. En host explícito, usar el puntero de esa ventana con los permisos autorizados.
+   - `hover` con `cua-driver`: en host, usar el puntero de la ventana del run con los permisos
+     autorizados; en Docker, mover el puntero del sandbox mediante accesibilidad o coordenadas
+     de la captura.
      Observar nuevamente screenshot/árbol. Registrar brecha sólo si el puntero alcanza el target pero el
      driver no puede mantener o demostrar el estado requerido.
    - Si la acción sí ocurre pero el resultado visual es incorrecto, devolver `FAIL`; no usar

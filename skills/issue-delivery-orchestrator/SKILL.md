@@ -246,10 +246,10 @@ Para apps Android nativas, cuando el usuario autorice ADB, aplicar [native-adb-e
 3. Ramificar exclusivamente por `developmentMode`:
 
    - `superset` o `vanilla`: invocar `issue-delivery-cua-review` desde el checkout adoptado.
-     Usar su escritorio Docker por defecto y conservar `reviewerMethod=cua-driver`.
-     Crear o reanudar sólo el sandbox del run según
-     [driver-contract.md](../issue-delivery-cua-review/references/driver-contract.md).
-     Ejecutar `launch-browser --url <url-local>` sólo cuando el usuario indique usar el host.
+     Usar el escritorio local (host) por defecto y conservar `reviewerMethod=cua-driver`:
+     ejecutar `launch-browser --url <url-local>` para abrir el navegador del run.
+     Usar Docker sólo cuando el usuario lo indique, creando o reanudando sólo el sandbox del run
+     según [driver-contract.md](../issue-delivery-cua-review/references/driver-contract.md).
    - `codex`: no ejecutar `launch-browser`; exigir la app de Codex y Browser disponible,
      e invocar `issue-delivery-browser-review`. Permitir Playwright headless sólo para una story
      con brecha demostrada de `file-upload` o `hover`, sin cambiar reviewer ni modo.
@@ -266,9 +266,10 @@ Para apps Android nativas, cuando el usuario autorice ADB, aplicar [native-adb-e
    inspeccionar la copia anotada y corregir bounds o captions antes del checkpoint. El motor
    preserva el original.
 
-Al terminar la revisión final o bloquear el run, retirar sólo su sandbox Cua y registrar la
-limpieza según el contrato. `stop-processes` y el cleanup del Local Runtime no limpian ese
-contenedor. Conservarlo mientras haya ciclos revisión-reparación activos.
+Al terminar la revisión final o bloquear el run, cerrar sólo el navegador propio del run en host
+o, si se usó Docker, retirar sólo su sandbox Cua, y registrar la limpieza según el contrato.
+`stop-processes` y el cleanup del Local Runtime no limpian el contenedor. Conservar el entorno
+mientras haya ciclos revisión-reparación activos.
 
 Leer [headless-assistance.md](references/headless-assistance.md). Mantener el reviewer del modo como
 primera opción para toda story. Si no puede ejecutar `file-upload` o mantener/demostrar un `hover`

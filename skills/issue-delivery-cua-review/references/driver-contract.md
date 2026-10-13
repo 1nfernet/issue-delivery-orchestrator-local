@@ -2,13 +2,41 @@
 
 ## Selección de entorno
 
-Usar un escritorio Linux en Docker por defecto. Usar el escritorio real sólo cuando el usuario
-lo indique. Si falta Docker, Cua o una capacidad exclusiva del host, devolver `BLOCKED`; no cambiar
-de entorno automáticamente. El modo del orchestrator y `provider=cua-driver` se conservan.
+Usar el escritorio local (host) por defecto. Usar un escritorio Linux en Docker sólo cuando el
+usuario lo indique. Si falta Cua, los permisos del host, Docker o una capacidad del entorno
+elegido, devolver `BLOCKED`; no cambiar de entorno automáticamente. El modo del orchestrator y
+`provider=cua-driver` se conservan.
 
-## Docker
+## Host (por defecto)
 
-Comprobar `docker info`, `cua --version` y `cua runtime doctor`. Usar la CLI `cua` para crear
+Exigir Accessibility y Screen Recording en macOS bajo la identidad de `CuaDriver.app`. No ejecutar instaladores,
+`permissions grant`, `check_permissions` ni cambios de telemetry desde el reviewer.
+
+Usar `launch-browser` del motor para abrir el navegador y perfil exclusivos del run. Registrar
+su PID con el motor. Obtener `window_id` mediante `list_windows`; renovarlo al cambiar de ventana.
+Mantener una sesión única derivada del run ID en cada llamada que la acepte.
+
+```bash
+cua-driver call list_windows '{"pid": <pid>}'
+cua-driver call get_window_state \
+  '{"pid": <pid>, "window_id": <window-id>, "session": "<run-session>"}' \
+  --screenshot-out-file <absolute-host-png>
+```
+
+Preferir `element_token`. Para `element_index`, incluir el `snapshot_id` correspondiente.
+Las coordenadas nativas provienen del PNG de esa misma ventana; las del navegador usan
+el viewport de su propia captura. Renovar el estado antes de reutilizar elementos.
+
+Usar `delivery_mode=background`. No activar foreground ni scope `desktop` del host sin una
+indicación del usuario que permita tomar el foco. Una acción que necesita foco y no está
+autorizada bloquea esa story. No controlar ventanas personales ni sesiones ajenas al run.
+
+Registrar en `validation/ui/cua-environment.json` el entorno `host`, PID, `window_id`, sesión y
+perfil del navegador. Al terminar, cerrar sólo el navegador y la sesión propios del run.
+
+## Docker (por indicación del usuario)
+
+Aplicar esta sección sólo cuando el usuario pida Docker o un escritorio aislado. Comprobar `docker info`, `cua --version` y `cua runtime doctor`. Usar la CLI `cua` para crear
 el escritorio que contiene Cua Driver. Un `cua-driver` ejecutado en el Mac controla el Mac,
 aunque Docker esté encendido; todas las observaciones y acciones deben apuntar al sandbox.
 
@@ -62,31 +90,6 @@ el home del usuario ni el socket Docker dentro del guest.
 Conservar el sandbox durante los ciclos de reparación. Al terminar o bloquear, ejecutar
 `sandbox rm <sandbox-name> --force` con la misma raíz de estado y registrar el resultado en
 el recibo del entorno. No asumir que `stop-processes` limpia contenedores. No borrar capturas.
-
-## Host explícito
-
-Aplicar esta sección sólo cuando el usuario seleccione el escritorio real. Exigir Accessibility
-y Screen Recording en macOS bajo la identidad de `CuaDriver.app`. No ejecutar instaladores,
-`permissions grant`, `check_permissions` ni cambios de telemetry desde el reviewer.
-
-Usar `launch-browser` del motor para abrir el navegador y perfil exclusivos del run. Registrar
-su PID con el motor. Obtener `window_id` mediante `list_windows`; renovarlo al cambiar de ventana.
-Mantener una sesión única derivada del run ID en cada llamada que la acepte.
-
-```bash
-cua-driver call list_windows '{"pid": <pid>}'
-cua-driver call get_window_state \
-  '{"pid": <pid>, "window_id": <window-id>, "session": "<run-session>"}' \
-  --screenshot-out-file <absolute-host-png>
-```
-
-Preferir `element_token`. Para `element_index`, incluir el `snapshot_id` correspondiente.
-Las coordenadas nativas provienen del PNG de esa misma ventana; las del navegador usan
-el viewport de su propia captura. Renovar el estado antes de reutilizar elementos.
-
-Usar `delivery_mode=background`. No activar foreground ni scope `desktop` del host sin una
-indicación del usuario que permita tomar el foco. Una acción que necesita foco y no está
-autorizada bloquea esa story. No controlar ventanas personales ni sesiones ajenas al run.
 
 ## Datos y evidencia
 
